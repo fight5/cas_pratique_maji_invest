@@ -144,7 +144,7 @@ def call_analyze(file_bytes: bytes, filename: str) -> dict:
     resp = requests.post(
         f"{API_BASE}/drawings/analyze",
         files={"file": (filename, file_bytes, _content_type(filename))},
-        timeout=120,
+        timeout=300,
     )
     resp.raise_for_status()
     return resp.json()

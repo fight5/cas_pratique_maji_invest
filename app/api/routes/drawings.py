@@ -48,7 +48,7 @@ async def analyze_drawing(
 
     try:
         if filename.endswith(".pdf") or file.content_type == "application/pdf":
-            pages = pdf_to_images(content, dpi=300)
+            pages = pdf_to_images(content, dpi=200)
             if not pages:
                 raise HTTPException(status_code=422, detail="PDF vide ou illisible")
             image = pages[0]

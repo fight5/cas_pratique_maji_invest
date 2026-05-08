@@ -32,11 +32,11 @@ class ExtractionService:
         t0 = time.time()
         warnings: list[str] = []
 
-        # Étape 1 — prétraitement
+        # Étape 1 — prétraitement (pour OCR uniquement)
         logger.info("[1/3] Prétraitement de l'image...")
         image_enhanced, image_bw = self.preprocessor.preprocess(image)
 
-        # Étape 2 — OCR
+        # Étape 2 — OCR (sur image prétraitée pour meilleure lisibilité texte)
         logger.info("[2/3] Extraction OCR (PaddleOCR)...")
         try:
             ocr_results = self.ocr_service.extract(image_enhanced)
@@ -45,10 +45,10 @@ class ExtractionService:
             ocr_results = []
             warnings.append(f"OCR partiel: {e}")
 
-        # Étape 3 — Vision IA
-        logger.info("[3/3] Analyse Vision IA (GPT-4o)...")
+        # Étape 3 — Vision IA (sur image ORIGINALE couleur haute qualité)
+        logger.info("[3/3] Analyse Vision IA (Gemini)...")
         try:
-            drawing_data = self.vision_service.analyze_drawing(image_enhanced)
+            drawing_data = self.vision_service.analyze_drawing(image)  # image originale, pas prétraitée
         except Exception as e:
             logger.error(f"Vision IA échouée: {e}")
             drawing_data = self._fallback_from_ocr(ocr_results)

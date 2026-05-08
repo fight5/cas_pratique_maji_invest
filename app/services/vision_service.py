@@ -77,10 +77,10 @@ Instructions :
 
 
 class VisionService:
-    """Service Vision IA utilisant le SDK natif Google Generative AI (Gemini Flash).
+    """Service Vision IA utilisant le SDK Google GenAI (Gemini Flash).
 
-    Utilise google-generativeai directement pour eviter les problemes
-    de compatibilite avec l'endpoint OpenAI-compatible de Google.
+    Utilise google-genai (nouveau SDK) pour eviter les avertissements
+    de deprecation du package google-generativeai.
     """
 
     def __init__(self):
@@ -97,13 +97,21 @@ class VisionService:
         self.model_name = settings.active_model
 
         if self.use_gemini:
-            import google.generativeai as genai
-            genai.configure(api_key=self.api_key)
-            self.gemini_model = genai.GenerativeModel(self.model_name)
-            logger.info(f"VisionService — Gemini ({self.model_name})")
+            try:
+                from google import genai
+                self.genai_client = genai.Client(api_key=self.api_key)
+                self._sdk = "new"
+                logger.info(f"VisionService — google.genai ({self.model_name})")
+            except Exception:
+                import google.generativeai as genai_legacy
+                genai_legacy.configure(api_key=self.api_key)
+                self.gemini_model = genai_legacy.GenerativeModel(self.model_name)
+                self._sdk = "legacy"
+                logger.info(f"VisionService — google-generativeai legacy ({self.model_name})")
         else:
             from openai import OpenAI
             self.openai_client = OpenAI(api_key=self.api_key)
+            self._sdk = "openai"
             logger.info(f"VisionService — OpenAI ({self.model_name})")
 
     def analyze_drawing(self, image: np.ndarray) -> DrawingData:
@@ -114,11 +122,23 @@ class VisionService:
     def _analyze_with_gemini(self, image: np.ndarray) -> DrawingData:
         pil_image = self._cv2_to_pil(image)
         try:
-            response = self.gemini_model.generate_content(
-                [EXTRACTION_PROMPT, pil_image],
-                generation_config={"temperature": 0.1, "max_output_tokens": 2500},
-            )
-            raw = response.text
+            if self._sdk == "new":
+                from google.genai import types
+                response = self.genai_client.models.generate_content(
+                    model=self.model_name,
+                    contents=[EXTRACTION_PROMPT, pil_image],
+                    config=types.GenerateContentConfig(
+                        temperature=0.1,
+                        max_output_tokens=8192,
+                    ),
+                )
+                raw = response.text
+            else:
+                response = self.gemini_model.generate_content(
+                    [EXTRACTION_PROMPT, pil_image],
+                    generation_config={"temperature": 0.1, "max_output_tokens": 8192},
+                )
+                raw = response.text
         except Exception as e:
             logger.error(f"Erreur Gemini: {e}")
             raise
