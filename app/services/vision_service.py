@@ -11,7 +11,6 @@ from app.models.drawing import DrawingData
 
 logger = logging.getLogger(__name__)
 
-# Prompt d'extraction structurée — conçu pour les plans techniques industriels
 EXTRACTION_PROMPT = """Tu es un expert en lecture de plans techniques industriels (tôlerie, usinage, mécanique de précision).
 
 Analyse ce plan technique et extrais TOUTES les informations disponibles.
@@ -68,32 +67,42 @@ Retourne UNIQUEMENT un objet JSON valide, sans markdown ni commentaire :
   "confidence_score": 0.0
 }
 
-Instructions importantes :
-- Les dimensions sont TOUJOURS en millimètres
-- Identifie chaque percage individuellement (forme, diamètre, quantité, position si visible)
-- Repère tous les pliages avec leurs angles et rayons
-- Extrait la nomenclature complète (tableau REP/DESIGNATION/QTÉ)
-- Capture TOUTES les notes techniques et tolérances
-- Le confidence_score doit refléter ta certitude globale (0.0 à 1.0)
+Instructions :
+- Dimensions toujours en millimètres
+- Identifier chaque percage (forme, diamètre, quantité, tolérance)
+- Repérer tous les pliages (angle, rayon, longueur)
+- Extraire la nomenclature complète (REP / DESIGNATION / QTÉ)
+- Capturer toutes les notes techniques et tolérances
+- confidence_score entre 0.0 et 1.0 selon ta certitude globale
 """
 
 
 class VisionService:
-    """Service d'analyse Vision IA via GPT-4o pour plans techniques industriels.
+    """Service Vision IA — compatible Gemini Flash (gratuit) et GPT-4o.
 
-    GPT-4o en mode 'high detail' est utilisé pour sa capacité à comprendre
-    la structure globale d'un plan (cartouche, vues, nomenclature, cotations)
-    que l'OCR seul ne peut pas contextualiser.
+    Utilise l'API OpenAI-compatible de Google pour Gemini,
+    ce qui permet de ne changer que la base_url et le modèle.
     """
 
     def __init__(self):
         settings = get_settings()
-        self.client = OpenAI(api_key=settings.openai_api_key)
-        self.model = settings.openai_model
-        logger.info(f"VisionService initialisé — modèle: {self.model}")
+
+        if not settings.active_api_key:
+            raise ValueError(
+                "Aucune clé API configurée. "
+                "Ajoute GEMINI_API_KEY ou OPENAI_API_KEY dans le fichier .env"
+            )
+
+        self.client = OpenAI(
+            api_key=settings.active_api_key,
+            base_url=settings.active_base_url,
+        )
+        self.model = settings.active_model
+        provider = "Gemini Flash" if settings.gemini_api_key else "GPT-4o"
+        logger.info(f"VisionService initialisé — provider: {provider}, modèle: {self.model}")
 
     def analyze_drawing(self, image: np.ndarray) -> DrawingData:
-        """Envoie le plan à GPT-4o et retourne les données structurées."""
+        """Envoie le plan au modèle Vision et retourne les données structurées."""
         image_b64 = self._encode_image(image)
 
         try:
@@ -108,7 +117,6 @@ class VisionService:
                                 "type": "image_url",
                                 "image_url": {
                                     "url": f"data:image/png;base64,{image_b64}",
-                                    "detail": "high",
                                 },
                             },
                         ],
@@ -118,22 +126,20 @@ class VisionService:
                 temperature=0.1,
             )
         except Exception as e:
-            logger.error(f"Erreur API OpenAI Vision: {e}")
+            logger.error(f"Erreur API Vision ({self.model}): {e}")
             raise
 
         raw = response.choices[0].message.content
-        logger.debug(f"Réponse Vision (extrait): {raw[:300]}...")
+        logger.debug(f"Réponse Vision brute (extrait): {raw[:300]}...")
         return self._parse_response(raw)
 
     def _parse_response(self, content: str) -> DrawingData:
         content = content.strip()
-        # Nettoyer les balises markdown éventuelles
         if content.startswith("```"):
             parts = content.split("```")
             content = parts[1] if len(parts) > 1 else parts[0]
             if content.lower().startswith("json"):
                 content = content[4:]
-
         try:
             data = json.loads(content.strip())
             return DrawingData(**data)

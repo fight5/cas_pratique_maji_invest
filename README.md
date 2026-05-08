@@ -87,7 +87,8 @@ maji-devis-ai/
 ### Prérequis
 
 - Python 3.11+
-- Clé API OpenAI (GPT-4o)
+- Clé API **Google Gemini** (gratuit) → [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+- Ou clé API OpenAI (GPT-4o, payant)
 
 ### Installation locale
 
@@ -106,7 +107,7 @@ pip install -r requirements.txt
 
 # Configuration
 cp .env.example .env
-# → Renseigner OPENAI_API_KEY dans .env
+# → Renseigner GEMINI_API_KEY (gratuit) ou OPENAI_API_KEY dans .env
 ```
 
 ### Lancement
@@ -264,7 +265,7 @@ Les tests unitaires ne nécessitent pas de clé API — ils mockent les couches 
 | Couche | Technologie |
 |---|---|
 | API Backend | FastAPI + Uvicorn |
-| Vision IA | OpenAI GPT-4o (mode high detail) |
+| Vision IA | Google Gemini 2.0 Flash (gratuit) / OpenAI GPT-4o |
 | OCR | PaddleOCR (angle_cls activé) |
 | Prétraitement | OpenCV + NumPy + Pillow |
 | PDF | PyMuPDF (fitz) |
