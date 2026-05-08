@@ -26,7 +26,7 @@ Plan technique (PDF / Image)
     Extraction texte + bounding boxes (texte pivoté supporté)
         │
         ▼
-[3] Vision IA — GPT-4o (high detail)
+[3] Vision IA — Gemini 2.0 Flash
     Compréhension structurelle du plan
     → JSON : dimensions, percages, pliages, nomenclature, tolérances
         │
@@ -60,7 +60,7 @@ maji-devis-ai/
 │   ├── services/
 │   │   ├── preprocessing.py         # Pipeline OpenCV
 │   │   ├── ocr_service.py           # Wrapper PaddleOCR
-│   │   ├── vision_service.py        # Client GPT-4o Vision
+│   │   ├── vision_service.py        # Client Gemini Flash Vision
 │   │   ├── extraction_service.py    # Orchestration pipeline
 │   │   └── quotation_service.py     # Moteur de calcul de devis
 │   ├── models/
@@ -265,7 +265,7 @@ Les tests unitaires ne nécessitent pas de clé API — ils mockent les couches 
 | Couche | Technologie |
 |---|---|
 | API Backend | FastAPI + Uvicorn |
-| Vision IA | Google Gemini 2.0 Flash (gratuit) / OpenAI GPT-4o |
+| Vision IA | Google Gemini 2.0 Flash (natif) / OpenAI GPT-4o (alternatif) |
 | OCR | PaddleOCR (angle_cls activé) |
 | Prétraitement | OpenCV + NumPy + Pillow |
 | PDF | PyMuPDF (fitz) |

@@ -1,26 +1,21 @@
+import os
 from functools import lru_cache
-from pydantic_settings import BaseSettings
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
-class Settings(BaseSettings):
-    app_name: str = "MAJI - Analyse de Plans Techniques"
-
-    # Provider IA — Gemini (gratuit) ou OpenAI (payant)
-    # Mettre GEMINI_API_KEY pour utiliser Gemini Flash (recommandé)
-    # Mettre OPENAI_API_KEY pour utiliser GPT-4o
-    gemini_api_key: str = ""
-    openai_api_key: str = ""
-
-    # Rempli automatiquement selon le provider détecté
-    ai_model: str = "gemini-2.0-flash"
-
-    max_image_size: int = 4096
-    ocr_confidence_threshold: float = 0.7
-
-    # Paramètres métier (modifiables via .env ou interface)
-    default_margin_rate: float = 0.30
-    machine_hourly_rate: float = 85.0
-    operator_hourly_rate: float = 35.0
+class Settings:
+    def __init__(self):
+        self.app_name = "MAJI - Analyse de Plans Techniques"
+        self.gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
+        self.openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+        self.max_image_size: int = int(os.getenv("MAX_IMAGE_SIZE", "4096"))
+        self.ocr_confidence_threshold: float = float(os.getenv("OCR_CONFIDENCE_THRESHOLD", "0.7"))
+        self.default_margin_rate: float = float(os.getenv("DEFAULT_MARGIN_RATE", "0.30"))
+        self.machine_hourly_rate: float = float(os.getenv("MACHINE_HOURLY_RATE", "85.0"))
+        self.operator_hourly_rate: float = float(os.getenv("OPERATOR_HOURLY_RATE", "35.0"))
 
     @property
     def active_api_key(self) -> str:
@@ -28,19 +23,13 @@ class Settings(BaseSettings):
 
     @property
     def active_model(self) -> str:
-        if self.gemini_api_key:
-            return "gemini-2.0-flash"
-        return "gpt-4o"
+        return "gemini-2.0-flash" if self.gemini_api_key else "gpt-4o"
 
     @property
-    def active_base_url(self) -> str | None:
+    def active_base_url(self):
         if self.gemini_api_key:
             return "https://generativelanguage.googleapis.com/v1beta/openai/"
         return None
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
 
 @lru_cache()

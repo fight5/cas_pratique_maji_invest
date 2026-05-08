@@ -12,16 +12,16 @@ class Hole(BaseModel):
 
 
 class Bend(BaseModel):
-    angle_deg: float
+    angle_deg: float = 0.0
     rayon_mm: Optional[float] = None
     longueur_mm: Optional[float] = None
     quantite: int = 1
 
 
 class BOMItem(BaseModel):
-    rep: int
-    designation: str
-    quantite: int
+    rep: int = 0
+    designation: str = ""
+    quantite: int = 1
     reference: Optional[str] = None
 
 
