@@ -2,7 +2,6 @@
 Interface MAJI — Analyse de Plans Techniques & Génération de Devis
 """
 
-import base64
 import io
 import json
 import os
@@ -22,116 +21,129 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── Brand CSS ──────────────────────────────────────────────────────────────────
+# ── Brand CSS — Charte graphique MAJI Industries ──────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;600;700&display=swap');
 
 /* Global */
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-
-/* Dark sidebar */
-[data-testid="stSidebar"] {
-    background: #0A1628 !important;
+html, body, [class*="css"] {
+    font-family: 'Poppins', sans-serif;
 }
-[data-testid="stSidebar"] * { color: #C8D6E5 !important; }
+
+/* Sidebar — blanc avec bordure teal */
+[data-testid="stSidebar"] {
+    background: #FFFFFF !important;
+    border-right: 3px solid #009485 !important;
+}
+[data-testid="stSidebar"] * { color: #1F242E !important; }
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3 { color: #FFFFFF !important; }
-[data-testid="stSidebar"] .stSlider > div > div > div { background: #E8420A !important; }
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] strong { color: #009485 !important; }
+[data-testid="stSidebar"] .stSlider > div > div > div { background: #009485 !important; }
 
-/* Header */
+/* Header MAJI */
 .maji-header {
     display: flex;
     align-items: center;
     gap: 2rem;
-    background: linear-gradient(135deg, #0A1628 0%, #112240 60%, #1A3055 100%);
-    padding: 1.5rem 2rem;
-    border-radius: 12px;
+    background: #009485;
+    padding: 1.4rem 2rem;
+    border-radius: 10px;
     margin-bottom: 1.5rem;
-    border-left: 5px solid #E8420A;
+}
+.maji-logo-text {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 3.2rem;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    margin: 0;
+}
+.maji-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
 }
 .maji-header-text h1 {
     color: #FFFFFF;
-    font-size: 1.6rem;
-    font-weight: 800;
-    margin: 0 0 0.3rem 0;
-    letter-spacing: 0.02em;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.01em;
 }
 .maji-header-text p {
-    color: #9EADBD;
-    font-size: 0.88rem;
+    color: rgba(255,255,255,0.80);
+    font-size: 0.78rem;
     margin: 0;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
-.maji-wordmark {
-    font-size: 3rem;
-    font-weight: 900;
-    color: #FFFFFF;
-    letter-spacing: -1px;
-    line-height: 1;
-    border-left: 5px solid #E8420A;
-    padding-left: 0.6rem;
+.maji-divider {
+    width: 1px;
+    height: 56px;
+    background: rgba(255,255,255,0.35);
 }
-.maji-wordmark span { color: #E8420A; }
 
 /* Metric cards */
 [data-testid="metric-container"] {
-    background: #F4F7FA;
-    border: 1px solid #DDE4ED;
+    background: #F0FAF9;
+    border: 1px solid #C0E8E4;
     border-radius: 8px;
     padding: 0.8rem 1rem;
-    border-top: 3px solid #E8420A;
+    border-top: 3px solid #009485;
 }
 
 /* Primary button */
 .stButton > button[kind="primary"] {
-    background: #E8420A !important;
+    background: #009485 !important;
     border: none !important;
     color: white !important;
     font-weight: 600 !important;
     border-radius: 6px !important;
+    font-family: 'Poppins', sans-serif !important;
 }
 .stButton > button[kind="primary"]:hover {
-    background: #C93A09 !important;
+    background: #007A6D !important;
 }
 
-/* Tab styling */
-[data-testid="stTabs"] button {
-    font-weight: 600;
+/* Tab styling — sélecteurs stables via data-baseweb */
+[data-baseweb="tab-list"] button[role="tab"] {
+    font-weight: 500;
     letter-spacing: 0.03em;
 }
-[data-testid="stTabs"] button[aria-selected="true"] {
-    color: #E8420A !important;
-    border-bottom-color: #E8420A !important;
+[data-baseweb="tab-list"] button[aria-selected="true"] {
+    color: #009485 !important;
+}
+/* Barre indicatrice active (div role=presentation dans le tab-list) */
+[data-baseweb="tab-list"] [role="presentation"] {
+    background-color: #009485 !important;
 }
 
-/* Divider accent */
-hr { border-color: #DDE4ED; }
+/* Divider */
+hr { border-color: #E0EFEE; }
 
 /* Section headers */
-h4 { color: #112240; border-bottom: 2px solid #E8420A; padding-bottom: 4px; display: inline-block; }
+h4 {
+    color: #1F242E;
+    border-bottom: 2px solid #009485;
+    padding-bottom: 4px;
+    display: inline-block;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Links */
+a { color: #009485 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 
-def _load_logo_b64() -> str:
-    logo_path = Path(__file__).parent / "assets" / "maji_logo.svg"
-    if logo_path.exists():
-        return base64.b64encode(logo_path.read_bytes()).decode()
-    return ""
-
-
-logo_b64 = _load_logo_b64()
-logo_img_tag = (
-    f'<img src="data:image/svg+xml;base64,{logo_b64}" height="70" alt="MAJI"/>'
-    if logo_b64 else '<div class="maji-wordmark">MA<span>J</span>I</div>'
-)
-
-st.markdown(f"""
+st.markdown("""
 <div class="maji-header">
-    {logo_img_tag}
+    <div class="maji-logo-text">MAJI</div>
+    <div class="maji-divider"></div>
     <div class="maji-header-text">
         <h1>Analyse de Plans Techniques</h1>
         <p>Extraction intelligente · Génération automatique de devis · Tôlerie &amp; Usinage</p>
