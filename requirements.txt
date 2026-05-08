@@ -19,7 +19,7 @@ openai==2.36.0
 
 # Computer Vision & Traitement d'image
 opencv-python-headless==4.9.0.80
-Pillow==10.3.0
+Pillow==12.2.0
 numpy==1.26.4
 
 # PDF
