@@ -1,275 +1,177 @@
-# MAJI — Analyse de Plans Techniques & Génération de Devis
+# Cas pratique MAJI — Devis automatique depuis plans techniques
 
-> Outil IA industriel pour l'extraction automatique d'informations depuis des plans techniques et la génération de devis structurés.
-
----
-
-## Contexte métier
-
-MAJI est un groupe industriel français (235 collaborateurs, 7 sites) spécialisé en tôlerie, composites et peinture industrielle. Actuellement, les devis sont créés manuellement en Excel — processus long, peu fiable, dépendant de multiples sources.
-
-Cet outil automatise le pipeline **plan technique → extraction → devis**, en combinant prétraitement d'image, OCR avancé et Vision IA multimodale.
+Outil IA pour lire des plans techniques et générer des devis. Développé dans le cadre du cas pratique MAJI.
 
 ---
 
-## Architecture
+## C'est quoi ?
+
+MAJI c'est un groupe industriel (tôlerie, composites, peinture). Les devis se font encore à la main sur Excel, c'est long et ça dépend trop d'une seule personne.
+
+L'idée : uploader un plan PDF → l'IA extrait les infos → le devis est généré automatiquement.
+
+---
+
+## Comment ça marche
 
 ```
-Plan technique (PDF / Image)
+Plan technique (PDF ou image)
         │
         ▼
-[1] Prétraitement OpenCV
-    Upscale → Débruitage → CLAHE → Deskewing → Binarisation
+Prétraitement OpenCV  ← améliore la qualité pour l'OCR
         │
         ▼
-[2] OCR — PaddleOCR
-    Extraction texte + bounding boxes (texte pivoté supporté)
+OCR PaddleOCR  ← extrait le texte brut
         │
         ▼
-[3] Vision IA — Gemini 2.0 Flash
-    Compréhension structurelle du plan
-    → JSON : dimensions, percages, pliages, nomenclature, tolérances
+Vision IA Gemini 2.5 Flash  ← comprend le plan, retourne un JSON structuré
+        │                       (dimensions, perçages, pliages, nomenclature...)
+        ▼
+Fusion OCR + Vision  ← l'OCR comble ce que Gemini a raté
         │
         ▼
-[4] Fusion & enrichissement croisé
-    OCR comble les champs manquants de la Vision
+Calcul du devis  ← matière + laser + pliage + perçage + montage + marge
         │
         ▼
-[5] Moteur de devis
-    Matière + Découpe laser + Pliage + Perçage + Montage + Marge
-        │
-        ▼
-[6] Export
-    JSON structuré · Excel · API REST
+Export JSON / Excel
 ```
 
 ---
 
-## Structure du projet
+## Structure
 
 ```
 maji-devis-ai/
 ├── app/
-│   ├── main.py                      # Point d'entrée FastAPI
-│   ├── core/
-│   │   └── config.py                # Configuration (Pydantic Settings)
-│   ├── api/
-│   │   └── routes/
-│   │       ├── drawings.py          # Route POST /drawings/analyze
-│   │       └── quotations.py        # Route POST /quotations/generate
+│   ├── main.py
+│   ├── core/config.py
+│   ├── api/routes/
+│   │   ├── drawings.py       # POST /drawings/analyze
+│   │   └── quotations.py     # POST /quotations/generate
 │   ├── services/
-│   │   ├── preprocessing.py         # Pipeline OpenCV
-│   │   ├── ocr_service.py           # Wrapper PaddleOCR
-│   │   ├── vision_service.py        # Client Gemini Flash Vision
-│   │   ├── extraction_service.py    # Orchestration pipeline
-│   │   └── quotation_service.py     # Moteur de calcul de devis
-│   ├── models/
-│   │   ├── drawing.py               # Modèles Pydantic plan technique
-│   │   └── quotation.py             # Modèles Pydantic devis
-│   └── utils/
-│       └── pdf_utils.py             # Conversion PDF → images
+│   │   ├── preprocessing.py
+│   │   ├── ocr_service.py
+│   │   ├── vision_service.py
+│   │   ├── extraction_service.py
+│   │   └── quotation_service.py
+│   └── models/
+│       ├── drawing.py
+│       └── quotation.py
 ├── frontend/
-│   └── streamlit_app.py             # Interface utilisateur Streamlit
-├── tests/
-│   └── test_pipeline.py             # Tests unitaires (sans API)
-├── sample_data/                     # Plans techniques exemples
-├── .env.example                     # Variables d'environnement
+│   └── streamlit_app.py
+├── .streamlit/config.toml
+├── .env.example
 ├── requirements.txt
-├── Dockerfile
-├── Dockerfile.frontend
 └── docker-compose.yml
 ```
 
 ---
 
-## Installation
+## Lancer le projet
 
 ### Prérequis
 
 - Python 3.11+
-- Clé API **Google Gemini** (gratuit) → [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
-- Ou clé API OpenAI (GPT-4o, payant)
+- Une clé Gemini gratuite → https://aistudio.google.com/apikey
 
-### Installation locale
+### Installation
 
 ```bash
-# Cloner le projet
-git clone <repo-url>
-cd maji-devis-ai
+git clone https://github.com/fight5/cas_pratique_maji
+cd cas_pratique_maji
 
-# Environnement virtuel
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+venv\Scripts\activate  # Windows
+# ou: source venv/bin/activate
 
-# Dépendances
 pip install -r requirements.txt
 
-# Configuration
 cp .env.example .env
-# → Renseigner GEMINI_API_KEY (gratuit) ou OPENAI_API_KEY dans .env
+# coller la clé GEMINI_API_KEY dans .env
 ```
 
-### Lancement
+### Démarrage
 
 ```bash
-# API backend
+# terminal 1 — API
 uvicorn app.main:app --reload --port 8000
 
-# Frontend (dans un autre terminal)
+# terminal 2 — interface
 streamlit run frontend/streamlit_app.py
 ```
 
-### Avec Docker
+- Interface : http://localhost:8501
+- API docs : http://localhost:8000/docs
+
+### Docker
 
 ```bash
 docker-compose up --build
 ```
 
-Accès :
-- API : http://localhost:8000
-- Swagger : http://localhost:8000/docs
-- Interface : http://localhost:8501
-
 ---
 
-## API Reference
+## API
 
-### `POST /api/v1/drawings/analyze`
+### Analyser un plan
+`POST /api/v1/drawings/analyze`
 
-Upload et analyse un plan technique.
+Upload multipart (PDF, PNG, JPG, TIFF). Retourne :
 
-**Corps** : `multipart/form-data` avec le fichier (`PDF`, `PNG`, `JPG`, `TIFF`)
-
-**Réponse** : `ExtractionResult`
 ```json
 {
-  "ocr_raw": [...],
   "drawing_data": {
-    "nom_piece": "SUPPORT REAR BRAKE",
-    "reference": "PIECE_003",
+    "nom_piece": "SUPPORT",
     "matiere": "Acier DC01",
     "epaisseur_mm": 2.0,
-    "masse_estimee_g": 68.0,
-    "dimensions": {
-      "longueur_mm": 60.0,
-      "largeur_mm": 50.0,
-      "surface_depliee_mm2": 8667.4
-    },
-    "percages": [{"forme": "rond", "diametre_mm": 8.75, "quantite": 2}],
-    "pliages": [{"angle_deg": 45.0, "rayon_mm": 2.0, "quantite": 2}],
-    "nomenclature": [...],
-    "notes_techniques": ["RAYON DE PLIAGE: 2mm"],
-    "confidence_score": 0.92
+    "dimensions": { "longueur_mm": 60.0, "largeur_mm": 60.0 },
+    "percages": [{ "diametre_mm": 5.5, "quantite": 4 }],
+    "pliages": [{ "angle_deg": 90.0, "quantite": 2 }],
+    "confidence_score": 0.9
   },
-  "processing_time_ms": 8200,
-  "warnings": []
+  "processing_time_ms": 57000
 }
 ```
 
----
+### Générer un devis
+`POST /api/v1/quotations/generate`
 
-### `POST /api/v1/quotations/generate`
-
-Génère un devis à partir des données extraites.
-
-**Corps** :
 ```json
 {
-  "drawing_data": { ... },
+  "drawing_data": { "..." },
   "quantite": 10,
   "marge_pct": 0.30,
-  "client": "Airbus Group"
-}
-```
-
-**Réponse** : `QuotationResponse`
-```json
-{
-  "id_devis": "A3F8C2D1",
-  "date_generation": "2026-05-08T14:30:00",
-  "cout_unitaire_ht": 24.85,
-  "cout_total_ht": 248.50,
-  "total_ttc": 298.20,
-  "breakdown": {
-    "matiere": {"cout_total": 0.14},
-    "decoupe": {"temps_minutes": 1.64, "cout_total": 2.32},
-    "pliage": {"temps_minutes": 6.6, "cout_total": 9.35},
-    "percage": {"temps_minutes": 1.0, "cout_total": 1.42},
-    "montage": {"temps_minutes": 17.5, "cout_total": 10.21},
-    "sous_total_ht": 23.44,
-    "marge_pct": 30.0,
-    "total_ht": 30.47,
-    "total_ttc": 36.57
-  }
+  "client": "Client X"
 }
 ```
 
 ---
 
-## Logique métier — Calcul des coûts
+## Calcul des coûts
 
-| Poste | Méthode de calcul | Paramètres |
-|---|---|---|
-| **Matière** | masse × 1,15 (chute) × prix/kg | Prix par matière (base simulée) |
-| **Découpe laser** | périmètre / vitesse_laser + setup | Vitesse 3000 mm/min, setup 1,5 min |
-| **Pliage** | setup 5 min + 0,8 min/pli | Taux machine configurable |
-| **Perçage** | 0,5 min/trou | Taux machine configurable |
-| **Montage** | 10 min + 2,5 min/composant | Taux opérateur configurable |
-| **Marge** | % appliqué sur le sous-total | Défaut: 30%, modifiable |
-
-### Base de prix matières (simulée)
-
-| Matière | Prix (€/kg) | Densité (kg/m³) |
-|---|---|---|
-| Acier DC01 | 1,80 | 7850 |
-| Inox 304 | 5,20 | 7900 |
-| Aluminium 5052 | 4,50 | 2680 |
-| Laiton | 7,80 | 8500 |
-
----
-
-## Fiabilité & Détection d'erreurs
-
-- **Score de confiance** : chaque extraction Vision retourne un `confidence_score` (0–1). En dessous de 0,5, un avertissement est injecté dans le devis.
-- **Validation des coûts** : alertes si le total est < 1 € ou > 5 000 €.
-- **Fallback OCR** : si l'API Vision est indisponible, l'extraction tente une inférence sur l'OCR brut.
-- **Enrichissement croisé** : les champs manquants du résultat Vision sont complétés par des patterns regex sur l'OCR.
-
----
-
-## Tests
-
-```bash
-pytest tests/ -v
-```
-
-Les tests unitaires ne nécessitent pas de clé API — ils mockent les couches Vision et OCR.
-
----
-
-## Évolutions prévues
-
-- [ ] Support multi-pages PDF (analyse de chaque vue)
-- [ ] Détection et surlignage des zones annotées (OpenCV contours)
-- [ ] Export PDF du devis avec cartouche MAJI
-- [ ] Base de données persistante des prix matières
-- [ ] Historique des devis avec filtrage
-- [ ] Support multilingue (plans FR/EN/DE)
-- [ ] Fine-tuning prompt selon le type de pièce (tôle, usinage, composite)
-
----
-
-## Stack technique
-
-| Couche | Technologie |
+| Poste | Logique |
 |---|---|
-| API Backend | FastAPI + Uvicorn |
-| Vision IA | Google Gemini 2.0 Flash (natif) / OpenAI GPT-4o (alternatif) |
-| OCR | PaddleOCR (angle_cls activé) |
-| Prétraitement | OpenCV + NumPy + Pillow |
-| PDF | PyMuPDF (fitz) |
-| Validation | Pydantic v2 |
-| Interface | Streamlit |
-| Export | Pandas + openpyxl |
-| Conteneurisation | Docker + Docker Compose |
+| Matière | masse × 1,15 (chute) × prix/kg |
+| Découpe laser | périmètre / vitesse + setup 1,5 min |
+| Pliage | 5 min setup + 0,8 min/pli |
+| Perçage | 0,5 min/trou |
+| Montage | 10 min + 2,5 min/composant |
+| Marge | % sur sous-total (défaut 30%) |
+
+Prix matières simulés (Acier 1,80€/kg, Inox 5,20€/kg, Alu 4,50€/kg).
+
+---
+
+## Ce qui manque / idées pour la suite
+
+- [ ] Analyse multi-pages PDF
+- [ ] Export PDF du devis avec entête MAJI
+- [ ] Historique des devis
+- [ ] Vrais prix matières (connecter un ERP ou une API)
+- [ ] Fine-tuning du prompt selon le type de pièce
+
+---
+
+## Stack
+
+FastAPI · Gemini 2.5 Flash · PaddleOCR · OpenCV · Streamlit · Pydantic v2 · Docker
