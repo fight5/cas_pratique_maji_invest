@@ -23,7 +23,7 @@ class Settings:
 
     @property
     def active_model(self) -> str:
-        return "gemini-2.0-flash" if self.gemini_api_key else "gpt-4o"
+        return "gemini-2.5-flash" if self.gemini_api_key else "gpt-4o"
 
     @property
     def active_base_url(self):
