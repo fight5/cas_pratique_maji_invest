@@ -1,0 +1,39 @@
+# Backend API
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# Vision & IA
+openai==1.30.1
+
+# OCR
+paddleocr==2.7.3
+paddlepaddle==2.6.1
+
+# Computer Vision & Traitement d'image
+opencv-python-headless==4.9.0.80
+Pillow==10.3.0
+numpy==1.26.4
+
+# PDF
+PyMuPDF==1.24.3
+pdf2image==1.17.0
+
+# Configuration & Validation
+pydantic==2.7.1
+pydantic-settings==2.2.1
+python-dotenv==1.0.1
+
+# HTTP
+httpx==0.27.0
+
+# Frontend
+streamlit==1.35.0
+pandas==2.2.2
+openpyxl==3.1.4
+plotly==5.22.0
+
+# Tests
+pytest==8.2.0
+pytest-asyncio==0.23.7
+httpx==0.27.0

@@ -1,0 +1,37 @@
+# Environnement
+.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# PaddleOCR cache (modèles téléchargés automatiquement)
+~/.paddleocr/
+
+# Données sensibles
+*.key
+*.pem
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
