@@ -27,7 +27,7 @@ app = FastAPI(
     description="""
 ## API intelligente pour l'industrie
 
-Outil IA destiné à automatiser la lecture de plans techniques et la génération de devis
+Outil assisté IA destiné à automatiser la lecture de plans techniques et la génération de devis
 dans un contexte industriel (tôlerie, usinage, composites).
 
 ### Pipeline d'analyse
